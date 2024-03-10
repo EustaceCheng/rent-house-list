@@ -1,61 +1,56 @@
-import { Button } from 'antd';
-import { z } from 'zod';
-import API from '@/script/requests';
+'use client';
+
+import { List, Space } from 'antd';
+import React from 'react';
+import { LikeOutlined, MessageOutlined, StarOutlined } from '@ant-design/icons';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { useRsList } from '@/services/queries';
+
+const queryClient = new QueryClient();
 
 const Home = () => (
     <div>
-        <UpdateHouseListButton />
+        <QueryClientProvider client={queryClient}>
+            <RsList />
+        </QueryClientProvider>
     </div>
 );
+const IconText = ({ icon, text }: { icon: React.ReactNode; text: string }) => (
+    <Space>
+        {icon}
+        {text}
+    </Space>
+);
+const RsList = () => {
+    const { data, isPending, isError } = useRsList();
 
-const URL =
-    '/home/search/rsList?is_format_data=1&is_new_list=1&type=1&region=3&order=posttime&orderType=desc&recom_community=1';
+    if (isPending || isError) return null;
 
-const affiliateDetailsResponseSchema = z.object({
-    data: z.object({
-        data: z
-            .object({
-                title: z.string(),
-                photo_list: z.string().array(),
-                price: z.string(),
-                price_unit: z.string(),
-                post_id: z.number(),
-                surrounding: z.object({
-                    type: z.string(),
-                    desc: z.string(),
-                    distance: z.string(),
-                }),
-            })
-            .array(),
-    }),
-    records: z.string(),
-});
-
-type AffiliateDetailsResponse = z.infer<typeof affiliateDetailsResponseSchema>;
-type GetHouseListParams = {};
-
-const getHouseList = async (params?: GetHouseListParams) => {
-    const { data } = await API.get<AffiliateDetailsResponse>(URL, params);
-
-    affiliateDetailsResponseSchema.parse(data);
-
-    return data;
-};
-
-const UpdateHouseListButton = () => {
-    const handleClick = async () => {
-        try {
-            const a = await getHouseList();
-            console.log(a);
-        } catch (error) {
-            console.log(error);
-        }
-    };
+    const { data: rsListData } = data.data;
 
     return (
-        <Button type="primary" onClick={handleClick}>
-            Update House List
-        </Button>
+        <List
+            dataSource={rsListData}
+            itemLayout="vertical"
+            pagination={false}
+            renderItem={item => (
+                <List.Item
+                    key={item.title}
+                    actions={[
+                        <IconText key="list-vertical-star-o" icon={<StarOutlined />} text="156" />,
+                        <IconText key="list-vertical-like-o" icon={<LikeOutlined />} text="156" />,
+                        <IconText
+                            key="list-vertical-message"
+                            icon={<MessageOutlined />}
+                            text="2"
+                        />,
+                    ]}
+                >
+                    {item.price}
+                </List.Item>
+            )}
+            size="large"
+        />
     );
 };
 
